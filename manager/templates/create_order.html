@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %} Create Order {% endblock %}
+{% block content %}
+<form action="{% url 'manager:orders' %}" method="post">
+    {% csrf_token %}
+    {% if form.subject.errors %}
+    <ol role="alertdialog">
+        {% for error in form.subject.errors %}
+        <li role="alert"><strong>{{ error|escape }}</strong></li>
+        {% endfor %}
+    </ol>
+    {% endif %}
+    {% for field in form %}
+    <div class="form-group">
+        <label >{{field.label}}</label>
+        {{field}}
+    </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary mb-2">Confirm</button>
+</form>
+{% endblock %}
