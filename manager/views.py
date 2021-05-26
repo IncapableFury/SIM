@@ -6,7 +6,7 @@ from django.views.generic import ListView, DetailView
 from django.urls import reverse
 
 from .models import Item
-from .forms import OrderForm
+from .forms import OrderForm, ItemFormset
 
 # Create your views here.
 class view_inventory(ListView):
@@ -47,7 +47,7 @@ def orders(request):
             description = form.cleaned_data['description']
             print("-------------------", form, shipping_address, description)
             return render(request, "test.html", {'info':form.cleaned_data})
-    return render(request, "test.html", {'info':"Viewing all orders"})
+    return render(request, "order_list.html", {'info':"Viewing all orders"})
 
 def test(request):
     return render(request, 'test.html')
@@ -63,8 +63,10 @@ def order_create(request):
             return render(request, "test.html", {'info':form.cleaned_data})
     else:
         form = OrderForm(initial={'address':"test string"})
+        formset = ItemFormset()
     context={
-        'form': form
+        'form': form,
+        'formset': formset
     }
     return render(request, 'create_order.html', context)
 

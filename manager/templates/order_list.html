@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title%} Orders {%endblock%}
+{% block content %}
+<div class="table-responsive">
+    <table class="table table-striped table-sm">
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Stock</th>
+            <th>Unit Price</th>
+            <th>Purchasing Price</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for item in orders %}
+        <tr>
+            <td>{{item.id}}</td>
+            <td><a href="{% url 'manager:view_item_detail' item.id %}">{{ item.name }}</a></td>
+            <td>{{item.stock}}</td>
+            <td>{{item.unit_price}}</td>
+            <td>{{item.purchasing_price}}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+
+    </table>
+    <a type="button" class="btn btn-primary btn-lg btn-block" href="{% url 'manager:create_order' %}">New Order</a>
+</div>
+
+
+{% endblock %}
