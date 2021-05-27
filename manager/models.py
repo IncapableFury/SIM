@@ -11,8 +11,7 @@ class Item(models.Model):
     category = models.CharField(max_length=20, default=None, blank=True, null=True)
 
     def __str__(self):
-        return str(self.name) + " | " + str(self.stock) + " | " + str(self.unit_price) + "/" + str(
-            self.purchasing_price)
+        return str(self.name)
 
 
 class Order(models.Model):

@@ -4,6 +4,7 @@ from django.template import loader
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import ListView, DetailView
 from django.urls import reverse
+from django.forms import formset_factory
 
 from .models import Item
 from .forms import OrderForm, ItemFormset
@@ -39,14 +40,35 @@ class view_item_detail(DetailView):
 #     return render(request, 'item_detail.html', {'item_detail':item_detail})
 
 def orders(request):
-
     if request.method == 'POST':
-        form = OrderForm(request.POST)
-        if form.is_valid():
-            shipping_address = form.cleaned_data['shipping_address']
-            description = form.cleaned_data['description']
-            print("-------------------", form, shipping_address, description)
-            return render(request, "test.html", {'info':form.cleaned_data})
+        if 'additems' in request.POST and request.POST['additems'] == 'true':
+            print("we are good")
+            formset_dict_copy = request.POST.copy()
+            formset_dict_copy['form-TOTAL_FORMS'] = int(formset_dict_copy['form-TOTAL_FORMS']) + 1
+            formset = ItemFormset(formset_dict_copy)
+            form = OrderForm(request.POST)
+            context = {
+                'form': form,
+                'formset': formset
+            }
+            return render(request, 'create_order.html', context)
+        else:
+            form = OrderForm(request.POST)
+            formset = ItemFormset(request.POST)
+            items_list = []
+            # print(form.is_valid(), formset.is_valid())
+            # print(formset)
+            if form.is_valid() and formset.is_valid():
+                shipping_address = form.cleaned_data['shipping_address']
+                description = form.cleaned_data['description']
+                print(formset)
+                for f in formset:
+                    print(f)
+                    # item = f.item
+                    # quantity = f.quantity
+                    items_list.append(f.cleaned_data)
+                # print("-------------------", shipping_address, description, items_list)
+            return render(request, "test.html", {'info':form.cleaned_data, 'info2':items_list})
     return render(request, "order_list.html", {'info':"Viewing all orders"})
 
 def test(request):
@@ -54,15 +76,22 @@ def test(request):
 
 # render the form
 def order_create(request):
+    print("----------testing---------------",request.POST)
     if request.method == 'POST':
         form = OrderForm(request.POST)
-        if form.is_valid():
+        formset = ItemFormset(request.POST)
+        if form.is_valid() and formset.is_valid():
             shipping_address = form.cleaned_data['shipping_address']
             description = form.cleaned_data['description']
-            print("-------------------", form, shipping_address, description)
-            return render(request, "test.html", {'info':form.cleaned_data})
+            items_list = []
+            for f in formset:
+                item = formset.cleaned_data['item']
+                quantity = f.cleaned_data['quantity']
+                items_list.append((item,quantity))
+            # print("-------------------", shipping_address, description, items_list)
+            return render(request, "test.html", {'info':form.cleaned_data, 'info2':formset.cleaned_data})
     else:
-        form = OrderForm(initial={'address':"test string"})
+        form = OrderForm(initial={'Shipping Address':"test string"})
         formset = ItemFormset()
     context={
         'form': form,

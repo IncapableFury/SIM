@@ -16,13 +16,30 @@
         {{field}}
     </div>
     {% endfor %}
+    {{ formset.management_form }}
+    <input type="hidden" value="false" name="additems" id="additems">
+    <button class="btn btn-primary" id="additemsbutton">Add item</button>
     {% for form in formset %}
     <div class="form-group">
         {{form}}
-<!--        <label>{{field.label}}</label>-->
-<!--        {{field}}-->
+        <!--        <label>{{field.label}}</label>-->
+        <!--        {{field}}-->
     </div>
     {% endfor %}
     <button type="submit" class="btn btn-primary mb-2">Confirm</button>
 </form>
+<!--<form action="{%url 'manager:create_order' %}" method="post">-->
+<!--    {% csrf_token %}-->
+<!--    <input type="hidden" value="false" name="additems" id="additems">-->
+<!--    <button class="btn btn-primary" id="additemsbutton">Add item</button>-->
+<!--</form>-->
+<script>
+$(document).ready(function() {
+        $("#additemsbutton").on('click',function(event) {
+         $("#additems").val("true");
+       });
+
+});
+
+</script>
 {% endblock %}
