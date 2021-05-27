@@ -14,20 +14,24 @@ class Item(models.Model):
         return str(self.name)
 
 
-class Order(models.Model):
-    PENDING = 'PD'  # unpaid
-    SHIPPING = 'SP'  # paid, shipping
-    FINISHED = 'FN'  # paid, shipped and delivered
+PENDING = 'PD'  # unpaid
+SHIPPING = 'SP'  # paid, shipping
+FINISHED = 'FN'  # paid, shipped and delivered
 
-    STATUS_CHOICES = [
-        (PENDING, 'Pending'),
-        (SHIPPING, 'Shipping'),
-        (FINISHED, 'Finished')
-    ]
+STATUS_CHOICES = [
+    (PENDING, 'Pending'),
+    (SHIPPING, 'Shipping'),
+    (FINISHED, 'Finished')
+]
+
+
+class Order(models.Model):
     status = models.CharField(max_length=2, choices=STATUS_CHOICES, default=PENDING)
     created_time = models.DateTimeField(auto_now=True)
     description = models.CharField(max_length=500, null=True)
     shipping_address = models.TextField(blank=True, null=True)
+
+
 
 
 class OrderItems(models.Model):

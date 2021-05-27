@@ -6,20 +6,20 @@
         <thead>
         <tr>
             <th>#</th>
-            <th>Name</th>
-            <th>Stock</th>
-            <th>Unit Price</th>
-            <th>Purchasing Price</th>
+            <th>Desc</th>
+            <th>Time</th>
+            <th>Total</th>
+            <th>Status</th>
         </tr>
         </thead>
         <tbody>
-        {% for item in orders %}
+        {% for order in orders %}
         <tr>
-            <td>{{item.id}}</td>
-            <td><a href="{% url 'manager:view_item_detail' item.id %}">{{ item.name }}</a></td>
-            <td>{{item.stock}}</td>
-            <td>{{item.unit_price}}</td>
-            <td>{{item.purchasing_price}}</td>
+            <td>{{order.id}}</td>
+            <td><a href="{% url 'manager:order_detail' order.id %}">{{order.description}}</a></td>
+            <td>{{order.created_time}}</td>
+            <td>0</td>
+            <td>{{order.status}}</td>
         </tr>
         {% endfor %}
         </tbody>

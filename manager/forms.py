@@ -1,13 +1,44 @@
 from django import forms
-from .models import Item
+from .models import Item, STATUS_CHOICES
+from django.core.exceptions import ValidationError
+from django.forms import BaseFormSet
 
 
 class ItemForm(forms.Form):
     iquery = Item.objects.values_list('name', flat=True).distinct()
     iquery_choices = [('', 'None')] + [(name, name) for name in iquery]
-    item = forms.ChoiceField(label="Item", widget=forms.Select(attrs={'class': 'form-select'}),
+    item = forms.ChoiceField(label="item", widget=forms.Select(attrs={'class': 'form-select', "required": "true"}),
                              choices=iquery_choices)
-    quantity = forms.IntegerField(label='quantity')
+    quantity = forms.IntegerField(label='quantity', widget=forms.NumberInput({'min': 1, "required": "true"}),
+                                  required=True)
+
+#     def clean(self):
+#         if any(self.errors):
+#             raise ValidationError("")
+#
+#
+class ItemFormSet(BaseFormSet):
+    def clean(self):
+        super(ItemFormSet, self).clean()
+        item_names = set()
+        for form in self.forms:
+            item_name = form.cleaned_data['item']
+            if item_name in item_names:
+                raise ValidationError("You shouldn't have two identical items in an order.")
+            else:
+                item_names.add(item_name)
+    pass
+#     def __init__(self, *args, **kwargs):
+#         super(ItemFormSet, self).__init__(*args, **kwargs)
+#         for form in self.forms:
+#             form.empty_permitted = False
+#
+#     def clean(self):
+#         if any(self.errors):
+#             raise ValidationError("")
+#         print(self.forms)
+#         if self.forms[0].cleaned_data.get('name') == "None" or not self.forms[0].cleaned_data.get('quantity'):
+#             raise ValidationError("")
 
 
 class OrderForm(forms.Form):
@@ -16,6 +47,7 @@ class OrderForm(forms.Form):
     description = forms.CharField(label="Description", max_length=100,
                                   widget=forms.Textarea(attrs={'class': 'form-control', 'rows': "3"}))
     status = forms.ChoiceField(label="Status", widget=forms.Select(attrs={'class': 'form-select'}),
-                               choices=[('1', 'First'), ('2', 'Second')])
+                               choices=STATUS_CHOICES)
 
-ItemFormset = forms.formset_factory(ItemForm, min_num=1, max_num=9)
+
+ItemFormset = forms.formset_factory(ItemForm, formset=ItemFormSet, extra=0, min_num=1, max_num=9, validate_min=True)

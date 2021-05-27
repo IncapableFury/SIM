@@ -3,13 +3,15 @@
 {% block content %}
 <form action="{% url 'manager:orders' %}" method="post">
     {% csrf_token %}
-    {% if form.subject.errors %}
-    <ol role="alertdialog">
-        {% for error in form.subject.errors %}
-        <li role="alert"><strong>{{ error|escape }}</strong></li>
-        {% endfor %}
-    </ol>
+    {% if formset.non_form_errors %}
+    <div>Errors:</div>
+    {% for error in formset.non_form_errors %}
+        <div class="alert alert-warning" role="alert">{{error}}</div>
+    {% endfor %}
+    {% else %}
     {% endif %}
+    <!--    {{formset.errors}}-->
+    <!--    {{formset.non_form_errors}}-->
     {% for field in form %}
     <div class="form-group">
         <label>{{field.label}}</label>
@@ -19,26 +21,19 @@
     {{ formset.management_form }}
     <input type="hidden" value="false" name="additems" id="additems">
     <button class="btn btn-primary" id="additemsbutton">Add item</button>
+    <h2> Items </h2>
     {% for form in formset %}
     <div class="form-group">
         {{form}}
-        <!--        <label>{{field.label}}</label>-->
-        <!--        {{field}}-->
     </div>
     {% endfor %}
     <button type="submit" class="btn btn-primary mb-2">Confirm</button>
 </form>
-<!--<form action="{%url 'manager:create_order' %}" method="post">-->
-<!--    {% csrf_token %}-->
-<!--    <input type="hidden" value="false" name="additems" id="additems">-->
-<!--    <button class="btn btn-primary" id="additemsbutton">Add item</button>-->
-<!--</form>-->
 <script>
 $(document).ready(function() {
         $("#additemsbutton").on('click',function(event) {
          $("#additems").val("true");
        });
-
 });
 
 </script>
