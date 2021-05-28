@@ -7,38 +7,30 @@ from django.forms import BaseFormSet
 class ItemForm(forms.Form):
     iquery = Item.objects.values_list('name', flat=True).distinct()
     iquery_choices = [('', 'None')] + [(name, name) for name in iquery]
-    item = forms.ChoiceField(label="item", widget=forms.Select(attrs={'class': 'form-select', "required": "true"}),
+    # item = forms.ChoiceField(label="item", widget=forms.Select(attrs={'class': 'form-select', "required": "true"}),
+    #                          choices=iquery_choices)
+    item = forms.ChoiceField(label="item", widget=forms.Select(
+        attrs={'class': 'js-example-basic-single form-control', "style": "width:auto;", "required": "true"}),
                              choices=iquery_choices)
     quantity = forms.IntegerField(label='quantity', widget=forms.NumberInput({'min': 1, "required": "true"}),
                                   required=True)
 
-#     def clean(self):
-#         if any(self.errors):
-#             raise ValidationError("")
+
 #
 #
 class ItemFormSet(BaseFormSet):
     def clean(self):
         super(ItemFormSet, self).clean()
         item_names = set()
-        for form in self.forms:
+        for form in self:
+            if not form.cleaned_data:
+                continue
+            print("testing", form.cleaned_data)
             item_name = form.cleaned_data['item']
             if item_name in item_names:
                 raise ValidationError("You shouldn't have two identical items in an order.")
             else:
                 item_names.add(item_name)
-    pass
-#     def __init__(self, *args, **kwargs):
-#         super(ItemFormSet, self).__init__(*args, **kwargs)
-#         for form in self.forms:
-#             form.empty_permitted = False
-#
-#     def clean(self):
-#         if any(self.errors):
-#             raise ValidationError("")
-#         print(self.forms)
-#         if self.forms[0].cleaned_data.get('name') == "None" or not self.forms[0].cleaned_data.get('quantity'):
-#             raise ValidationError("")
 
 
 class OrderForm(forms.Form):
