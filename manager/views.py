@@ -45,19 +45,28 @@ class view_item_detail(DetailView):
 #     return render(request, 'item_detail.html', {'item_detail':item_detail})
 
 def orders(request):
-    if request.method == 'POST':  # add item row; it shouldn't be there
-        if 'additems' in request.POST and request.POST['additems'] == 'true':
-            print("we are good")
+    if request.method == 'POST':  # TODO: add/remove item row; its logic shouldn't be there. no idea how
+        print(request.POST)
+        if request.POST['additems'] == 'true' or request.POST['removeitems'] == 'true':
+            # print("we are good")
             formset_dict_copy = request.POST.copy()
-            formset_dict_copy['form-TOTAL_FORMS'] = int(formset_dict_copy['form-TOTAL_FORMS']) + 1
+            if request.POST['additems'] == 'true':
+                formset_dict_copy['form-TOTAL_FORMS'] = int(formset_dict_copy['form-TOTAL_FORMS']) + 1
+                formset_dict_copy['additems'] = 'false'
+            else:
+                # print("we are good")
+                formset_dict_copy['form-TOTAL_FORMS'] = int(formset_dict_copy['form-TOTAL_FORMS']) - 1
+                formset_dict_copy['removeitems'] = 'false'
+            # print("testing",formset_dict_copy)
             formset = ItemFormset(formset_dict_copy)
-            form = OrderForm(request.POST)
+            form = OrderForm(request.POST, use_required_attribute=False)
             context = {
                 'form': form,
                 'formset': formset
             }
             return render(request, 'create_order.html', context)
-        else:  # create order
+        else:  # create the real order
+            print("are we even here?")
             form = OrderForm(request.POST)
             formset = ItemFormset(request.POST)
             items_list = []
@@ -67,17 +76,28 @@ def orders(request):
                 shipping_address = form.cleaned_data['shipping_address']
                 description = form.cleaned_data['description']
                 init_status = form.cleaned_data['status']
-                new_order = Order(shipping_address=shipping_address, description=description,
-                                  status=init_status)
-                new_order.save()
+                buyer = form.cleaned_data['buyer']
+                tracking_number = form.cleaned_data['tracking_number']
+                cost = 0
+                profit = 0
+                order_items_data = []
                 # print(formset)
-                for f in formset:
+                for f in formset:  # get data of each item, do validation here
                     item = Item.objects.get(name=f.cleaned_data["item"])
-                    order_item = OrderItems(order=new_order, item=item, quantity=f.cleaned_data["quantity"])
-                    # item = f.item
-                    # quantity = f.quantity
+                    order_items_data.append({'item_reference': item, 'quantity': f.cleaned_data["quantity"],
+                                             'offset': f.cleaned_data['offset']})
+                    cost += float(item.purchasing_price)
+                    profit += float(item.unit_price) - cost + float(f.cleaned_data['offset'])
+                new_order = Order(shipping_address=shipping_address, description=description,
+                                  status=init_status, cost=cost, profit=profit, buyer=buyer,
+                                  tracking_number=tracking_number)
+                new_order.save()
+                for order_item_data in order_items_data:  # persist to db
+                    order_item = OrderItems(order=new_order, item=order_item_data['item_reference'], quantity=order_item_data['quantity'],
+                                            offset=order_item_data['offset'])
                     order_item.save()
-                    items_list.append(f.cleaned_data)
+                    items_list.append(order_item_data)
+
                 # print("-------------------", shipping_address, description, items_list)
             else:
                 context = {
@@ -94,10 +114,10 @@ def orders(request):
 
 def order_detail(request, order_id):
     order_detail = Order.objects.get(pk=order_id)
-    order_items = OrderItems.objects.filter(order__id=order_id).values('item_id', 'quantity', 'discount')
+    order_items = OrderItems.objects.filter(order__id=order_id).values('item_id', 'quantity', 'offset')
     for item in order_items:
         item['name'] = Item.objects.get(pk=item['item_id']).name
-    print(order_detail, order_items)
+    # print(order_detail, order_items)
     context = {
         "order_detail": model_to_dict(order_detail, fields=[field.name for field in order_detail._meta.fields]),
         "order_items": order_items
@@ -111,7 +131,7 @@ def test(request):
 
 # render the form
 def order_create(request):
-    print("----------testing---------------", request.POST)
+    # print("----------testing---------------", request.POST)
     if request.method == 'POST':
         form = OrderForm(request.POST)
         formset = ItemFormset(request.POST)
@@ -126,7 +146,7 @@ def order_create(request):
             # print("-------------------", shipping_address, description, items_list)
             return render(request, "test.html", {'info': form.cleaned_data, 'info2': formset.cleaned_data})
     else:
-        form = OrderForm(initial={'Shipping Address': "test string"})
+        form = OrderForm(use_required_attribute=False)
         formset = ItemFormset()
     context = {
         'form': form,

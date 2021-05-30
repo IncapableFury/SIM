@@ -30,14 +30,17 @@ class Order(models.Model):
     created_time = models.DateTimeField(auto_now=True)
     description = models.CharField(max_length=500, null=True)
     shipping_address = models.TextField(blank=True, null=True)
-
-
+    buyer = models.CharField(max_length=12, default="")
+    profit = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    tracking_number = models.TextField(blank=True, null=True)
 
 
 class OrderItems(models.Model):
+    # FKs
     order = models.ForeignKey(Order, on_delete=models.PROTECT, related_name='orderitems', null=True)
     item = models.ForeignKey(Item, on_delete=models.PROTECT, null=True)
     # price = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
 
     quantity = models.IntegerField(default=1, null=False)
-    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    offset = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # only applicable for one single order

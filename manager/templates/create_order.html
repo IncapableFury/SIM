@@ -6,7 +6,7 @@
     {% if formset.non_form_errors %}
     <div>Errors:</div>
     {% for error in formset.non_form_errors %}
-        <div class="alert alert-warning" role="alert">{{error}}</div>
+    <div class="alert alert-warning" role="alert">{{error}}</div>
     {% endfor %}
     {% else %}
     {% endif %}
@@ -20,7 +20,9 @@
     {% endfor %}
     {{ formset.management_form }}
     <input type="hidden" value="false" name="additems" id="additems">
+    <input type="hidden" value="false" name="removeitems" id="removeitems">
     <button class="btn btn-primary" id="additemsbutton">Add item</button>
+    <button class="btn btn-primary" id="removeitemsbutton">Remove item</button>
     <h2> Items </h2>
     {% for form in formset %}
     <div class="form-group">
@@ -33,9 +35,13 @@
 $(document).ready(function() {
         $("#additemsbutton").on('click',function(event) {
          $("#additems").val("true");
+         $("#removeitems").val("false");
+       });
+           $("#removeitemsbutton").on('click',function(event) {
+           $("#additems").val("false");
+         $("#removeitems").val("true");
        });
        $('.js-example-basic-single').select2();
 });
-
 </script>
 {% endblock %}
