@@ -9,6 +9,8 @@ from django.forms import formset_factory
 from .models import Item, Order, OrderItems
 from .forms import OrderForm, ItemFormset
 from django.forms.models import model_to_dict
+from django.db.models import Func
+from django.db import models
 
 
 # Create your views here.
@@ -46,7 +48,7 @@ class view_item_detail(DetailView):
 
 def orders(request):
     if request.method == 'POST':  # TODO: add/remove item row; its logic shouldn't be there. no idea how
-        print(request.POST)
+        print("flags: ", request.POST['additems'], request.POST['removeitems'])
         if request.POST['additems'] == 'true' or request.POST['removeitems'] == 'true':
             # print("we are good")
             formset_dict_copy = request.POST.copy()
@@ -70,7 +72,8 @@ def orders(request):
             form = OrderForm(request.POST)
             formset = ItemFormset(request.POST)
             items_list = []
-            print(form.is_valid(), formset.is_valid(), formset.errors, formset.non_form_errors)
+            print("forms status: ", form.is_valid(), formset.is_valid(), form.errors, formset.errors,
+                  formset.non_form_errors())
             # print(formset)
             if form.is_valid() and formset.is_valid():
                 shipping_address = form.cleaned_data['shipping_address']
@@ -86,23 +89,36 @@ def orders(request):
                     item = Item.objects.get(name=f.cleaned_data["item"])
                     order_items_data.append({'item_reference': item, 'quantity': f.cleaned_data["quantity"],
                                              'offset': f.cleaned_data['offset']})
-                    cost += float(item.purchasing_price)
-                    profit += float(item.unit_price) - cost + float(f.cleaned_data['offset'])
+                    single_cost, single_profit = float(item.purchasing_price), float(item.unit_price) - cost + float(
+                        f.cleaned_data['offset'])
+                    cost += single_cost * f.cleaned_data["quantity"]
+                    profit += single_profit * f.cleaned_data["quantity"]
                 new_order = Order(shipping_address=shipping_address, description=description,
                                   status=init_status, cost=cost, profit=profit, buyer=buyer,
                                   tracking_number=tracking_number)
                 new_order.save()
                 for order_item_data in order_items_data:  # persist to db
-                    order_item = OrderItems(order=new_order, item=order_item_data['item_reference'], quantity=order_item_data['quantity'],
+                    order_item = OrderItems(order=new_order, item=order_item_data['item_reference'],
+                                            quantity=order_item_data['quantity'],
                                             offset=order_item_data['offset'])
                     order_item.save()
                     items_list.append(order_item_data)
 
                 # print("-------------------", shipping_address, description, items_list)
             else:
+                form.use_required_attribute = False
+                print("testing error types:")
+                for error in [form.errors, formset.errors, formset.non_form_errors]:
+                    print(type(error))
+                errors = []
+                for error in form.errors:
+                    print(form.errors[error])
+                    # errors.append(field + " : " + error)
+                print(errors)
                 context = {
                     'form': form,
-                    'formset': formset
+                    'formset': formset,
+                    "errors": errors
                 }
                 return render(request, 'create_order.html', context)
             return render(request, "test.html", {'info': form.cleaned_data, 'info2': items_list})
@@ -158,3 +174,23 @@ def order_create(request):
 def test_order(request):
     print(request)
     pass
+
+
+def view_report(request):
+    from django.db.models import Sum
+    # TODO: query based on year; year default hard coded
+    year, month_str_representations = 2021, ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct",
+                                             "Nov", "Dec"]
+    order_month_entries = []
+    order_year_entries = Order.objects.filter(created_time__year=year)
+    for month in range(1, 13):
+        order_entries = order_year_entries.filter(created_time__month=month)
+        month_profit = order_entries.aggregate(Sum('profit'))
+        order_month_entries.append((month_str_representations[month - 1],
+                                    month_profit["profit__sum"] if month_profit["profit__sum"] else 0.0,
+                                    order_entries))
+    print(order_month_entries)
+    context = {
+        "orders": order_month_entries
+    }
+    return render(request, 'view_reports.html', context)

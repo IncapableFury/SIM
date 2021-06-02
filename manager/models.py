@@ -27,10 +27,10 @@ STATUS_CHOICES = [
 
 class Order(models.Model):
     status = models.CharField(max_length=2, choices=STATUS_CHOICES, default=PENDING)
-    created_time = models.DateTimeField(auto_now=True)
+    created_time = models.DateTimeField(auto_now=True)  # TODO: auto-now should be False
     description = models.CharField(max_length=500, null=True)
     shipping_address = models.TextField(blank=True, null=True)
-    buyer = models.CharField(max_length=12, default="")
+    buyer = models.CharField(max_length=100, default="")
     profit = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     tracking_number = models.TextField(blank=True, null=True)
@@ -38,8 +38,8 @@ class Order(models.Model):
 
 class OrderItems(models.Model):
     # FKs
-    order = models.ForeignKey(Order, on_delete=models.PROTECT, related_name='orderitems', null=True)
-    item = models.ForeignKey(Item, on_delete=models.PROTECT, null=True)
+    order = models.ForeignKey(Order, on_delete=models.PROTECT, related_name='orderitems', null=False)
+    item = models.ForeignKey(Item, on_delete=models.PROTECT, null=False)
     # price = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
 
     quantity = models.IntegerField(default=1, null=False)

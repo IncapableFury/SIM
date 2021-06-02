@@ -15,10 +15,10 @@ class ItemForm(forms.Form):
     #                          choices=iquery_choices)
     item = forms.ChoiceField(label="item", widget=forms.Select(
         attrs={'class': 'js-example-basic-single form-control', "style": "width:auto;"}),
-                             choices=get_item_list, required=False )
+                             choices=get_item_list, required=False)
     quantity = forms.IntegerField(label='quantity',
                                   widget=forms.NumberInput({'min': 1}),
-                                  required=False, initial=1)
+                                  required=True, initial=1)
     offset = forms.DecimalField(label="Offset", widget=forms.NumberInput({}), initial=0.0, required=False,)
 
 

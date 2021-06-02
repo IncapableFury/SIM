@@ -3,19 +3,13 @@
 {% block content %}
 <form action="{% url 'manager:orders' %}" method="post">
     {% csrf_token %}
-    {% if formset.non_form_errors %}
-    <div>Errors:</div>
-    {% for error in formset.non_form_errors %}
-    <div class="alert alert-warning" role="alert">{{error}}</div>
-    {% endfor %}
-    {% else %}
-    {% endif %}
-    <!--    {{formset.errors}}-->
-    <!--    {{formset.non_form_errors}}-->
     {% for field in form %}
     <div class="form-group">
         <label>{{field.label}}</label>
         {{field}}
+        {% if field.errors %}
+        <div class="alert alert-warning" role="alert">{{field.errors.as_text}}</div>
+        {% endif %}
     </div>
     {% endfor %}
     {{ formset.management_form }}
@@ -27,6 +21,7 @@
     {% for form in formset %}
     <div class="form-group">
         {{form}}
+        {{form.errors}}
     </div>
     {% endfor %}
     <button type="submit" class="btn btn-primary mb-2">Confirm</button>
@@ -43,5 +38,8 @@ $(document).ready(function() {
        });
        $('.js-example-basic-single').select2();
 });
+
+
+
 </script>
 {% endblock %}

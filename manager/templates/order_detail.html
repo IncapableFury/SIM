@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
-{{order_detail}}
-{{order_items}}
-<h3> Details </h3>
+<!--{{order_detail}}-->
+<!--{{order_items}}-->
+<h3> Details of Order {{ order_detail.id }} </h3>
 <table class="table">
     <thead>
     <tr>
@@ -42,4 +42,5 @@
     {% endfor %}
     </tbody>
 </table>
+<button type=button class="btn btn-primary btn-lg" onClick="javascript:history.go(-1);">Back</button>
 {% endblock %}
