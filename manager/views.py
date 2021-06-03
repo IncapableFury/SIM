@@ -186,8 +186,10 @@ def view_report(request):
     for month in range(1, 13):
         order_entries = order_year_entries.filter(created_time__month=month)
         month_profit = order_entries.aggregate(Sum('profit'))
+        month_cost = order_entries.aggregate(Sum('cost'))
         order_month_entries.append((month_str_representations[month - 1],
                                     month_profit["profit__sum"] if month_profit["profit__sum"] else 0.0,
+                                    month_cost["cost__sum"] if month_cost["cost__sum"] else 0.0,
                                     order_entries))
     print(order_month_entries)
     context = {
