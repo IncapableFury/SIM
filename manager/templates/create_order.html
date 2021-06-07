@@ -36,23 +36,9 @@
             {% endif %}
             {% endfor %}
         </tr>
-        <!--        <tr>-->
-        <!--            {% for field in form %}-->
-        <!--            {% if not field.errors %}-->
-        <!--            <td></td>-->
-        <!--            <td></td>-->
-        <!--            {% else %}-->
-        <!--            <td colspan="2" class="alert alert-warning" role="alert">{{field.errors.as_text}}</td>-->
-        <!--            {% endif %}-->
-        <!--            {% endfor %}-->
-        <!--        </tr>-->
         {% endfor %}
         </tbody>
     </table>
-    <!--    <div class="form-group">-->
-    <!--        {{form}}-->
-    <!--        {{form.errors}}-->
-    <!--    </div>-->
 
     {% if formset.non_form_errors %}
     <div class="alert alert-warning" role="alert">{{ formset.non_form_errors.as_text}}</div>
