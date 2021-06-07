@@ -18,12 +18,46 @@
     <button class="btn btn-primary" id="additemsbutton">Add item</button>
     <button class="btn btn-primary" id="removeitemsbutton">Remove item</button>
     <h2> Items </h2>
-    {% for form in formset %}
-    <div class="form-group">
-        {{form}}
-        {{form.errors}}
-    </div>
-    {% endfor %}
+    <table class="table table-striped">
+        <tbody>
+        {% for form in formset %}
+        <tr>
+            {% for field in form %}
+            {% if not field.errors %}
+            {% if field.label == 'item' %}
+            <td>{{ field }}</td>
+            {% else %}
+            <td>{{field.label}}</td>
+            <td>{{ field }}</td>
+            {% endif %}
+            {% else %}
+            <td class="alert alert-warning" role="alert">{{ field.label }}</td>
+            <td class="alert alert-warning" role="alert">{{ field }} {{field.errors.as_text}}</td>
+            {% endif %}
+            {% endfor %}
+        </tr>
+        <!--        <tr>-->
+        <!--            {% for field in form %}-->
+        <!--            {% if not field.errors %}-->
+        <!--            <td></td>-->
+        <!--            <td></td>-->
+        <!--            {% else %}-->
+        <!--            <td colspan="2" class="alert alert-warning" role="alert">{{field.errors.as_text}}</td>-->
+        <!--            {% endif %}-->
+        <!--            {% endfor %}-->
+        <!--        </tr>-->
+        {% endfor %}
+        </tbody>
+    </table>
+    <!--    <div class="form-group">-->
+    <!--        {{form}}-->
+    <!--        {{form.errors}}-->
+    <!--    </div>-->
+
+    {% if formset.non_form_errors %}
+    <div class="alert alert-warning" role="alert">{{ formset.non_form_errors.as_text}}</div>
+    {% endif %}
+
     <button type="submit" class="btn btn-primary mb-2">Confirm</button>
 </form>
 <script>
