@@ -1,16 +1,17 @@
+from django.core.exceptions import ValidationError
 from django.shortcuts import render
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.template import loader
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView
 from django.urls import reverse
 from django.forms import formset_factory
 
 from .models import Item, Order, OrderItems
-from .forms import OrderForm, ItemFormset
+from .forms import OrderForm, ItemFormset, UploadFileForm
 from django.forms.models import model_to_dict
-from django.db.models import Func
-from django.db import models
+from django.db.models import Func, ProtectedError
+from django.db import models, IntegrityError
 
 
 # Create your views here.
@@ -93,6 +94,14 @@ def orders(request):
                         f.cleaned_data['offset'])
                     cost += single_cost * f.cleaned_data["quantity"]
                     profit += single_profit * f.cleaned_data["quantity"]
+                    # TODO: offset makes profit negative
+                    try:
+                        item.stock = item.stock - f.cleaned_data["quantity"]
+                        item.save()
+                    except IntegrityError:
+                        f.add_error('quantity', ValidationError("Stock not enough"))
+                        return render(request, 'create_order.html', {'form': form,
+                                                                     'formset': formset})
                 new_order = Order(shipping_address=shipping_address, description=description,
                                   status=init_status, cost=cost, profit=profit, buyer=buyer,
                                   tracking_number=tracking_number)
@@ -103,7 +112,6 @@ def orders(request):
                                             offset=order_item_data['offset'])
                     order_item.save()
                     items_list.append(order_item_data)
-
                 # print("-------------------", shipping_address, description, items_list)
             else:
                 form.use_required_attribute = False
@@ -196,3 +204,37 @@ def view_report(request):
         "orders": order_month_entries
     }
     return render(request, 'view_reports.html', context)
+
+def upload_excel(request):
+    import pandas as pd
+    import random
+    if request.method == 'POST':
+        form = UploadFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            mode, file = form.cleaned_data["behavior"], request.FILES['file']
+            redirect_to_inventory = True
+            if mode == 'override':
+                try:
+                    Item.objects.filter(orderitems=None).delete()
+                # TODO:handle error
+                except ProtectedError:
+                    redirect_to_inventory = False
+                    form.add_error(None, "Can not flush database. Try append mode instead.")
+            data = pd.read_excel(file)
+            df = pd.DataFrame(data, columns=['name', 'stock', 'unit_price'])
+            for idx, row in df.iterrows():
+                name, stock, unit_price = row['name'], row['stock'], row['unit_price']
+                purchasing_price = random.randint(1, unit_price)
+                # print(row['name'], row['stock'], row['unit_price'])
+                new_item = Item(name=name, stock=stock,unit_price=unit_price,purchasing_price=purchasing_price)
+                new_item.save()
+            if redirect_to_inventory:
+                return redirect('/manager/inventory')
+        else:
+            pass
+    else:
+        form = UploadFileForm()
+    context = {
+        'form': form
+    }
+    return render(request, 'upload_excel.html', context)

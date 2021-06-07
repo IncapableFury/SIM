@@ -23,16 +23,12 @@
         {% for form in formset %}
         <tr>
             {% for field in form %}
-            {% if not field.errors %}
-            {% if field.label == 'item' %}
-            <td>{{ field }}</td>
-            {% else %}
             <td>{{field.label}}</td>
+            {% if filed.errors %}
             <td>{{ field }}</td>
-            {% endif %}
             {% else %}
-            <td class="alert alert-warning" role="alert">{{ field.label }}</td>
-            <td class="alert alert-warning" role="alert">{{ field }} {{field.errors.as_text}}</td>
+<!--            <td class="alert alert-warning" role="alert">{{ field.label }}</td>-->
+            <td class="alert alert-warning" role="alert">{{ field }} {{ field.errors.as_text }}</td>
             {% endif %}
             {% endfor %}
         </tr>
@@ -43,6 +39,7 @@
     {% if formset.non_form_errors %}
     <div class="alert alert-warning" role="alert">{{ formset.non_form_errors.as_text}}</div>
     {% endif %}
+
 
     <button type="submit" class="btn btn-primary mb-2">Confirm</button>
 </form>
@@ -58,6 +55,7 @@ $(document).ready(function() {
        });
        $('.js-example-basic-single').select2();
 });
+
 
 
 

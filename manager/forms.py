@@ -19,12 +19,17 @@ class ItemForm(forms.Form):
     quantity = forms.IntegerField(label='quantity',
                                   widget=forms.NumberInput({'min': 1}),
                                   required=True, initial=1)
-    offset = forms.DecimalField(label="Offset", widget=forms.NumberInput({}), initial=0.0, required=False,)
+    offset = forms.DecimalField(label="Offset", widget=forms.NumberInput({}), initial=0.0, required=False, )
 
 
 #
 #
 class ItemFormSet(BaseFormSet):
+    def _construct_form(self, i, **kwargs):
+        form = super()._construct_form(i, **kwargs)
+        form.fields['item'].label = str(i + 1)
+        return form
+
     def clean(self):
         super(ItemFormSet, self).clean()
         item_names = set()
@@ -54,3 +59,9 @@ class OrderForm(forms.Form):
 
 
 ItemFormset = forms.formset_factory(ItemForm, formset=ItemFormSet, extra=0, min_num=1, max_num=9, validate_min=True)
+
+
+class UploadFileForm(forms.Form):
+    behavior = forms.ChoiceField(label="Mode", widget=forms.Select(attrs={'class': 'form-select'}),
+                                 choices=[('append', 'append'), ('override', 'override')])
+    file = forms.FileField()
