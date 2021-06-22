@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.forms import formset_factory
 
 from .models import Item, Order, OrderItems
-from .forms import OrderForm, ItemFormset, UploadFileForm
+from .forms import OrderForm, ItemFormset, UploadFileForm, ItemForm
 from django.forms.models import model_to_dict
 from django.db.models import Func, ProtectedError
 from django.db import models, IntegrityError
@@ -49,52 +49,60 @@ class view_item_detail(DetailView):
 
 def orders(request):
     if request.method == 'POST':  # TODO: add/remove item row; its logic shouldn't be there. no idea how
-        print("flags: ", request.POST['additems'], request.POST['removeitems'])
-        if request.POST['additems'] == 'true' or request.POST['removeitems'] == 'true':
-            # print("we are good")
-            formset_dict_copy = request.POST.copy()
-            if request.POST['additems'] == 'true':
-                formset_dict_copy['form-TOTAL_FORMS'] = int(formset_dict_copy['form-TOTAL_FORMS']) + 1
-                formset_dict_copy['additems'] = 'false'
-            else:
-                # print("we are good")
-                formset_dict_copy['form-TOTAL_FORMS'] = int(formset_dict_copy['form-TOTAL_FORMS']) - 1
-                formset_dict_copy['removeitems'] = 'false'
-            # print("testing",formset_dict_copy)
-            formset = ItemFormset(formset_dict_copy)
-            form = OrderForm(request.POST, use_required_attribute=False)
-            context = {
-                'form': form,
-                'formset': formset
-            }
-            return render(request, 'create_order.html', context)
-        else:  # create the real order
-            print("are we even here?")
-            form = OrderForm(request.POST)
-            formset = ItemFormset(request.POST)
-            items_list = []
-            print("forms status: ", form.is_valid(), formset.is_valid(), form.errors, formset.errors,
-                  formset.non_form_errors())
+        # print("flags: ", request.POST['additems'], request.POST['removeitems'])
+        # if request.POST['additems'] == 'true' or request.POST['removeitems'] == 'true':
+        #     formset_dict_copy = request.POST.copy()
+        #     if request.POST['additems'] == 'true':
+        #         formset_dict_copy['form-TOTAL_FORMS'] = int(formset_dict_copy['form-TOTAL_FORMS']) + 1
+        #         formset_dict_copy['additems'] = 'false'
+        #     else:
+        #         # print("we are good")
+        #         formset_dict_copy['form-TOTAL_FORMS'] = int(formset_dict_copy['form-TOTAL_FORMS']) - 1
+        #         formset_dict_copy['removeitems'] = 'false'
+        #     # print("testing",formset_dict_copy)
+        #     formset_initial = [{
+        #         'quantity': 1, 'offset': 0.0, 'not_consume_inventory': False, 'item': '',
+        #     } for _ in range(int(formset_dict_copy['form-TOTAL_FORMS']))]
+        #     print(formset_dict_copy)
+        #     formset = ItemFormset(formset_dict_copy
+        #                           , initial=formset_initial
+        #                           )
+        #     # formset = ItemFormset.objects.create()
+        #     form = OrderForm(request.POST, use_required_attribute=False)
+        #     context = {
+        #         'form': form,
+        #         'formset': formset
+        #     }
+        #     return render(request, 'create_order.html', context)
+        # else:  # create the real order
+        print("are we even here?")
+        form = OrderForm(request.POST)
+        formset = ItemFormset(request.POST)
+        items_list = []
+        print("forms status: ", form.is_valid(), formset.is_valid(), form.errors, formset.errors,
+              formset.non_form_errors())
+        # print(formset)
+        if form.is_valid() and formset.is_valid():
+            shipping_address = form.cleaned_data['shipping_address']
+            description = form.cleaned_data['description']
+            init_status = form.cleaned_data['status']
+            buyer = form.cleaned_data['buyer']
+            tracking_number = form.cleaned_data['tracking_number']
+            cost = 0
+            profit = 0
+            order_items_data = []
             # print(formset)
-            if form.is_valid() and formset.is_valid():
-                shipping_address = form.cleaned_data['shipping_address']
-                description = form.cleaned_data['description']
-                init_status = form.cleaned_data['status']
-                buyer = form.cleaned_data['buyer']
-                tracking_number = form.cleaned_data['tracking_number']
-                cost = 0
-                profit = 0
-                order_items_data = []
-                # print(formset)
-                for f in formset:  # get data of each item, do validation here
-                    item = Item.objects.get(name=f.cleaned_data["item"])
-                    order_items_data.append({'item_reference': item, 'quantity': f.cleaned_data["quantity"],
-                                             'offset': f.cleaned_data['offset']})
-                    single_cost, single_profit = float(item.purchasing_price), float(item.unit_price) - cost + float(
-                        f.cleaned_data['offset'])
-                    cost += single_cost * f.cleaned_data["quantity"]
-                    profit += single_profit * f.cleaned_data["quantity"]
-                    # TODO: offset makes profit negative
+            for f in formset:  # get data of each item, do validation here
+                item = Item.objects.get(name=f.cleaned_data["item"])
+                order_items_data.append({'item_reference': item, 'quantity': f.cleaned_data["quantity"],
+                                         'offset': f.cleaned_data['offset']})
+                single_cost, single_profit = float(item.purchasing_price), float(item.unit_price) - cost + float(
+                    f.cleaned_data['offset'])
+                cost += single_cost * f.cleaned_data["quantity"]
+                profit += single_profit * f.cleaned_data["quantity"]
+                # TODO: offset makes profit negative
+                print(f.cleaned_data['not_consume_inventory'])
+                if not f.cleaned_data['not_consume_inventory']:
                     try:
                         item.stock = item.stock - f.cleaned_data["quantity"]
                         item.save()
@@ -102,34 +110,35 @@ def orders(request):
                         f.add_error('quantity', ValidationError("Stock not enough"))
                         return render(request, 'create_order.html', {'form': form,
                                                                      'formset': formset})
-                new_order = Order(shipping_address=shipping_address, description=description,
-                                  status=init_status, cost=cost, profit=profit, buyer=buyer,
-                                  tracking_number=tracking_number)
-                new_order.save()
-                for order_item_data in order_items_data:  # persist to db
-                    order_item = OrderItems(order=new_order, item=order_item_data['item_reference'],
-                                            quantity=order_item_data['quantity'],
-                                            offset=order_item_data['offset'])
-                    order_item.save()
-                    items_list.append(order_item_data)
-                # print("-------------------", shipping_address, description, items_list)
-            else:
-                form.use_required_attribute = False
-                print("testing error types:")
-                for error in [form.errors, formset.errors, formset.non_form_errors]:
-                    print(type(error))
-                errors = []
-                for error in form.errors:
-                    print(form.errors[error])
-                    # errors.append(field + " : " + error)
-                print(errors)
-                context = {
-                    'form': form,
-                    'formset': formset,
-                    "errors": errors
-                }
-                return render(request, 'create_order.html', context)
-            return render(request, "test.html", {'info': form.cleaned_data, 'info2': items_list})
+            new_order = Order(shipping_address=shipping_address, description=description,
+                              status=init_status, cost=cost, profit=profit, buyer=buyer,
+                              tracking_number=tracking_number)
+            new_order.save()
+            for order_item_data in order_items_data:  # persist to db
+                order_item = OrderItems(order=new_order, item=order_item_data['item_reference'],
+                                        quantity=order_item_data['quantity'],
+                                        offset=order_item_data['offset'])
+                order_item.save()
+                items_list.append(order_item_data)
+            # print("-------------------", shipping_address, description, items_list)
+        else:
+            form.use_required_attribute = False
+            print("testing error types:")
+            for error in [form.errors, formset.errors, formset.non_form_errors]:
+                print(type(error))
+            errors = []
+            for error in form.errors:
+                print(form.errors[error])
+                # errors.append(field + " : " + error)
+            print(errors)
+            context = {
+                'form': form,
+                'formset': formset,
+                "errors": errors
+            }
+            return render(request, 'create_order.html', context)
+        return redirect('/manager/orders')
+        # return render(request, "test.html", {'info': form.cleaned_data, 'info2': items_list})
     else:
         orders = Order.objects.all()
         context = {"orders": orders}
@@ -168,7 +177,8 @@ def order_create(request):
                 quantity = f.cleaned_data['quantity']
                 items_list.append((item, quantity))
             # print("-------------------", shipping_address, description, items_list)
-            return render(request, "test.html", {'info': form.cleaned_data, 'info2': formset.cleaned_data})
+        return redirect('manager/orders')
+        # return render(request, "test.html", {'info': form.cleaned_data, 'info2': formset.cleaned_data})
     else:
         form = OrderForm(use_required_attribute=False)
         formset = ItemFormset()
@@ -187,23 +197,27 @@ def test_order(request):
 def view_report(request):
     from django.db.models import Sum
     # TODO: query based on year; year default hard coded
+    def num_format(x):
+        return "{:.2f}".format(x) if x else 0.0
     year, month_str_representations = 2021, ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct",
                                              "Nov", "Dec"]
     order_month_entries = []
     order_year_entries = Order.objects.filter(created_time__year=year)
     for month in range(1, 13):
         order_entries = order_year_entries.filter(created_time__month=month)
-        month_profit = order_entries.aggregate(Sum('profit'))
-        month_cost = order_entries.aggregate(Sum('cost'))
+        month_profit = order_entries.aggregate(Sum('profit'))["profit__sum"]
+        month_cost = order_entries.aggregate(Sum('cost'))["cost__sum"]
+        month_proceed = month_profit + month_cost if month_profit else 0
         order_month_entries.append((month_str_representations[month - 1],
-                                    month_profit["profit__sum"] if month_profit["profit__sum"] else 0.0,
-                                    month_cost["cost__sum"] if month_cost["cost__sum"] else 0.0,
+                                    num_format(month_proceed),
+                                    num_format(month_profit),
+                                    num_format(month_cost),
                                     order_entries))
-    print(order_month_entries)
     context = {
         "orders": order_month_entries
     }
     return render(request, 'view_reports.html', context)
+
 
 def upload_excel(request):
     import pandas as pd
@@ -226,7 +240,7 @@ def upload_excel(request):
                 name, stock, unit_price = row['name'], row['stock'], row['unit_price']
                 purchasing_price = random.randint(1, unit_price)
                 # print(row['name'], row['stock'], row['unit_price'])
-                new_item = Item(name=name, stock=stock,unit_price=unit_price,purchasing_price=purchasing_price)
+                new_item = Item(name=name, stock=stock, unit_price=unit_price, purchasing_price=purchasing_price)
                 new_item.save()
             if redirect_to_inventory:
                 return redirect('/manager/inventory')
@@ -238,3 +252,9 @@ def upload_excel(request):
         'form': form
     }
     return render(request, 'upload_excel.html', context)
+
+def dashboard(request):
+    return render(request, 'dashboard.html')
+
+def customers(request):
+    return render(request, 'customer_list.html')

@@ -13,15 +13,15 @@
     </div>
     {% endfor %}
     {{ formset.management_form }}
-    <input type="hidden" value="false" name="additems" id="additems">
-    <input type="hidden" value="false" name="removeitems" id="removeitems">
-    <button class="btn btn-primary" id="additemsbutton">Add item</button>
-    <button class="btn btn-primary" id="removeitemsbutton">Remove item</button>
+<!--    <input type="hidden" value="false" name="additems" id="additems">-->
+<!--    <input type="hidden" value="false" name="removeitems" id="removeitems">-->
+    <button class="btn btn-primary" id="add-form">Add item</button>
+    <button class="btn btn-primary" id="remove-form">Remove item</button>
     <h2> Items </h2>
     <table class="table table-striped">
-        <tbody>
+        <tbody id="form-container">
         {% for form in formset %}
-        <tr>
+        <tr class="item-form">
             {% for field in form %}
             <td>{{field.label}}</td>
             {% if filed.errors %}
@@ -33,8 +33,10 @@
             {% endfor %}
         </tr>
         {% endfor %}
+        <div id="place-holder"></div>
         </tbody>
     </table>
+<!--    <button id="add-form" type="button">Add Another Form</button>-->
 
     {% if formset.non_form_errors %}
     <div class="alert alert-warning" role="alert">{{ formset.non_form_errors.as_text}}</div>
@@ -43,21 +45,48 @@
 
     <button type="submit" class="btn btn-primary mb-2">Confirm</button>
 </form>
+
 <script>
-$(document).ready(function() {
-        $("#additemsbutton").on('click',function(event) {
-         $("#additems").val("true");
-         $("#removeitems").val("false");
-       });
-           $("#removeitemsbutton").on('click',function(event) {
-           $("#additems").val("false");
-         $("#removeitems").val("true");
-       });
-       $('.js-example-basic-single').select2();
-});
+    let form = document.querySelectorAll(".item-form")
+    let container = document.querySelector("#form-container")
+    let addButton = document.querySelector("#add-form")
+    let removeButton = document.querySelector("#remove-form")
+    let totalForms = document.querySelector("#id_form-TOTAL_FORMS")
+    let placeholder = document.querySelector("#place-holder")
 
+    let formNum = form.length-1
+    addButton.addEventListener('click', addForm)
+    removeButton.addEventListener('click',removeForm)
 
+    function addForm(e){
+        e.preventDefault()
 
+        let newForm = form[0].cloneNode(true)
+        let formRegex = RegExp(`form-(\\d){1}-`,'g')
+
+        formNum++
+        newForm.innerHTML = newForm.innerHTML.replace(formRegex, `form-${formNum}-`)
+        container.append(newForm)
+        totalForms.setAttribute('value', `${formNum+1}`)
+    }
+    function removeForm(e){
+        e.preventDefault()
+
+        $('#form-container tr:last').remove()
+        formNum--
+        totalForms.setAttribute('value', `${formNum-1}`)
+    }
+<!--$(document).ready(function() {-->
+<!--        $("#additemsbutton").on('click',function(event) {-->
+<!--         $("#additems").val("true");-->
+<!--         $("#removeitems").val("false");-->
+<!--       });-->
+<!--           $("#removeitemsbutton").on('click',function(event) {-->
+<!--           $("#additems").val("false");-->
+<!--         $("#removeitems").val("true");-->
+<!--       });-->
+<!--       $('.js-example-basic-single').select2();-->
+<!--});-->
 
 </script>
 {% endblock %}

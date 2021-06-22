@@ -20,7 +20,7 @@
             <td>{{order.id}}</td>
             <td>{{order.buyer}}</td>
             <td>{{order.created_time}}</td>
-            <td>{{order.total}}/{{order.profit}}/{{order.cost}}</td>
+            <td>{{order.profit|add:order.cost}}/{{order.profit}}/{{order.cost}}</td>
             <td>{{order.get_status_display}}</td>
             <td>{{order.description}}</td>
             <!--            <td><a href="{% url 'manager:order_detail' order.id %}">{{order.description}}</a></td>-->

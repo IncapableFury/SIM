@@ -28,7 +28,7 @@ STATUS_CHOICES = [
 class Order(models.Model):
     status = models.CharField(max_length=2, choices=STATUS_CHOICES, default=PENDING)
     created_time = models.DateTimeField(auto_now=True)  # TODO: auto-now should be False
-    description = models.CharField(max_length=500, null=True)
+    description = models.CharField(max_length=500, null=True, blank=True)
     shipping_address = models.TextField(blank=True, null=True)
     buyer = models.CharField(max_length=100, default="")
     profit = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)

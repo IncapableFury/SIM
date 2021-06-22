@@ -1,15 +1,16 @@
 {% extends "base.html" %}
 {% block title%} Reports {%endblock%}
 {% block content %}
+{% load utils %}
 
 <table class="table table-striped table-lg">
     <thead>
     <tr>
         <th>Month</th>
-        <th>Profit/Cost</th>
+        <th>Proceed/Profit/Cost</th>
     </tr>
     </thead>
-    {% for month_pre, month_profit, month_cost, order_entries in orders %}
+    {% for month_pre, month_proceed, month_profit, month_cost, order_entries in orders %}
     <tbody>
     <tr>
         <td colspan="2">
@@ -22,9 +23,11 @@
                             <div class="col-5">
                                 {{ month_pre }}
                             </div>
-                            <div>{{ month_profit }} / {{ month_cost }}</div>
+                            <div>{{ month_proceed }} / {{ month_profit }} / {{ month_cost }}</div>
                         </button>
                     </h2>
+                </div>
+            </div>
         </td>
     </tr>
     <tr>
@@ -52,7 +55,7 @@
                                 <td>{{order.id}}</td>
                                 <td>{{order.buyer}}</td>
                                 <td>{{order.created_time}}</td>
-                                <td>{{order.total}}/{{order.profit}}/{{order.cost}}</td>
+                                <td>{{order.profit|add:order.cost}}/{{order.profit}}/{{order.cost}}</td>
                                 <td>{{order.get_status_display}}</td>
                                 <td>{{order.description}}</td>
                                 <td>
