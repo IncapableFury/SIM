@@ -13,21 +13,29 @@
     </div>
     {% endfor %}
     {{ formset.management_form }}
-<!--    <input type="hidden" value="false" name="additems" id="additems">-->
-<!--    <input type="hidden" value="false" name="removeitems" id="removeitems">-->
+    <!--    <input type="hidden" value="false" name="additems" id="additems">-->
+    <!--    <input type="hidden" value="false" name="removeitems" id="removeitems">-->
     <button class="btn btn-primary" id="add-form">Add item</button>
     <button class="btn btn-primary" id="remove-form">Remove item</button>
     <h2> Items </h2>
     <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Offset</th>
+            <th>Inventory Consumption</th>
+        </tr>
+        </thead>
         <tbody id="form-container">
         {% for form in formset %}
         <tr class="item-form">
             {% for field in form %}
-            <td>{{field.label}}</td>
+<!--            <td>{{field.label}}</td>-->
             {% if filed.errors %}
             <td>{{ field }}</td>
             {% else %}
-<!--            <td class="alert alert-warning" role="alert">{{ field.label }}</td>-->
+            <!--            <td class="alert alert-warning" role="alert">{{ field.label }}</td>-->
             <td class="alert alert-warning" role="alert">{{ field }} {{ field.errors.as_text }}</td>
             {% endif %}
             {% endfor %}
@@ -36,7 +44,7 @@
         <div id="place-holder"></div>
         </tbody>
     </table>
-<!--    <button id="add-form" type="button">Add Another Form</button>-->
+    <!--    <button id="add-form" type="button">Add Another Form</button>-->
 
     {% if formset.non_form_errors %}
     <div class="alert alert-warning" role="alert">{{ formset.non_form_errors.as_text}}</div>
@@ -74,7 +82,7 @@
 
         $('#form-container tr:last').remove()
         formNum--
-        totalForms.setAttribute('value', `${formNum-1}`)
+        totalForms.setAttribute('value', `${formNum+1}`)
     }
 <!--$(document).ready(function() {-->
 <!--        $("#additemsbutton").on('click',function(event) {-->
@@ -87,6 +95,7 @@
 <!--       });-->
 <!--       $('.js-example-basic-single').select2();-->
 <!--});-->
+
 
 </script>
 {% endblock %}
