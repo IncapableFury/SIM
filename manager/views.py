@@ -199,30 +199,22 @@ def view_report(request):
     # TODO: query based on year; year default hard coded
     def num_format(x):
         return "{:.2f}".format(x) if x else 0.0
-
     year, month_str_representations = 2021, ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct",
                                              "Nov", "Dec"]
     order_month_entries = []
     order_year_entries = Order.objects.filter(created_time__year=year)
-    year_profit, year_cost, year_proceed = 0, 0, 0
     for month in range(1, 13):
         order_entries = order_year_entries.filter(created_time__month=month)
         month_profit = order_entries.aggregate(Sum('profit'))["profit__sum"]
         month_cost = order_entries.aggregate(Sum('cost'))["cost__sum"]
         month_proceed = month_profit + month_cost if month_profit else 0
-        year_profit += month_profit if month_profit else 0
-        year_cost += month_cost if month_cost else 0
-        year_proceed += month_proceed if month_proceed else 0
         order_month_entries.append((month_str_representations[month - 1],
                                     num_format(month_proceed),
                                     num_format(month_profit),
                                     num_format(month_cost),
                                     order_entries))
     context = {
-        "orders": order_month_entries,
-        "year_proceed": num_format(year_proceed),
-        "year_profit": num_format(year_profit),
-        "year_cost": num_format(year_cost)
+        "orders": order_month_entries
     }
     return render(request, 'view_reports.html', context)
 
@@ -261,10 +253,8 @@ def upload_excel(request):
     }
     return render(request, 'upload_excel.html', context)
 
-
 def dashboard(request):
     return render(request, 'dashboard.html')
-
 
 def customers(request):
     return render(request, 'customer_list.html')
