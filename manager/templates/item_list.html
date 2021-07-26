@@ -1,5 +1,8 @@
 {% extends "base.html" %}
-{% block title%} Stock {%endblock%}
+{% block title%} <div class="row">
+    <div class="col">Inventory</div>
+    <div class="col-md-auto">Total cost:{{ cost_sum }}</div>
+</div> {%endblock%}
 {% block content %}
 <div class="table-responsive">
     <table class="table table-striped table-sm">

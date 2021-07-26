@@ -5,7 +5,7 @@ from . import views
 app_name = 'manager'
 urlpatterns = [
     path('',views.dashboard, name='dashboard'),
-    path('inventory', views.view_inventory.as_view(), name='view_inventory'),
+    path('inventory', views.view_inventory, name='view_inventory'),
     path('customers', views.customers,name='customers'),
     path('item/<int:pk>', views.view_item_detail.as_view(), name='view_item_detail'),
     path('order-create', views.order_create, name='create_order'),

@@ -10,26 +10,29 @@ from django.forms import formset_factory
 from .models import Item, Order, OrderItems
 from .forms import OrderForm, ItemFormset, UploadFileForm, ItemForm
 from django.forms.models import model_to_dict
-from django.db.models import Func, ProtectedError
+from django.db.models import Func, ProtectedError, Sum
 from django.db import models, IntegrityError
 
 
 # Create your views here.
-class view_inventory(ListView):
-    model = Item
-    context_object_name = "inventory"
+# class view_inventory(ListView):
+#     model = Item
+#     context_object_name = "inventory"
+#
+#     def get_template_names(self):
+#         return "item_list.html"
 
-    def get_template_names(self):
-        return "item_list.html"
 
+def view_inventory(request):
+    inventory = Item.objects.all()
+    cost_sum = Item.objects.aggregate(Sum('unit_price'))["unit_price__sum"]
+    # template = loader.get_template('item_list.html')
+    context = {
+        'inventory': inventory,
+        'cost_sum': cost_sum
+    }
+    return render(request, "item_list.html", context)
 
-# def view_inventory(request):
-#     inventory = Item.objects.all()
-#     template = loader.get_template('item_list.html')
-#     context = {
-#         'inventory': inventory
-#     }
-#     return HttpResponse(template.render(context,request))
 
 class view_item_detail(DetailView):
     model = Item
@@ -96,7 +99,8 @@ def orders(request):
                 item = Item.objects.get(name=f.cleaned_data["item"])
                 order_items_data.append({'item_reference': item, 'quantity': f.cleaned_data["quantity"],
                                          'offset': f.cleaned_data['offset']})
-                single_cost, single_profit = float(item.purchasing_price), float(item.unit_price) - cost + float(
+                single_cost, single_profit = float(item.purchasing_price), float(item.unit_price) - float(
+                    item.purchasing_price) - cost + float(
                     f.cleaned_data['offset'])
                 cost += single_cost * f.cleaned_data["quantity"]
                 profit += single_profit * f.cleaned_data["quantity"]
@@ -137,7 +141,7 @@ def orders(request):
                 "errors": errors
             }
             return render(request, 'create_order.html', context)
-        return redirect('/manager/orders')
+        return redirect('/orders')
         # return render(request, "test.html", {'info': form.cleaned_data, 'info2': items_list})
     else:
         orders = Order.objects.all()
@@ -204,23 +208,19 @@ def view_report(request):
                                              "Nov", "Dec"]
     order_month_entries = []
     order_year_entries = Order.objects.filter(created_time__year=year)
-    year_profit, year_cost, year_proceed = 0, 0, 0
+    year_profit, year_cost = 0, 0
     for month in range(1, 13):
         order_entries = order_year_entries.filter(created_time__month=month)
         month_profit = order_entries.aggregate(Sum('profit'))["profit__sum"]
         month_cost = order_entries.aggregate(Sum('cost'))["cost__sum"]
-        month_proceed = month_profit + month_cost if month_profit else 0
         year_profit += month_profit if month_profit else 0
         year_cost += month_cost if month_cost else 0
-        year_proceed += month_proceed if month_proceed else 0
         order_month_entries.append((month_str_representations[month - 1],
-                                    num_format(month_proceed),
                                     num_format(month_profit),
                                     num_format(month_cost),
                                     order_entries))
     context = {
         "orders": order_month_entries,
-        "year_proceed": num_format(year_proceed),
         "year_profit": num_format(year_profit),
         "year_cost": num_format(year_cost)
     }
